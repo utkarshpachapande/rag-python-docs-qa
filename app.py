@@ -829,6 +829,10 @@ with tab_kb:
         kb_kpi_card(col2, "Embedding Dims", embedding_dims)
         kb_kpi_card(col3, "Index Type", index_type)
 
+        
+        # Space between KPI cards and charts
+        st.markdown("<div style='height:30px;'></div>", unsafe_allow_html=True)
+
         # 4. Process Metadata for Charts
         from collections import Counter
         # Safely extract metadata (assumes your chunking.py adds 'library' and 'type' to metadata)
