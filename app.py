@@ -46,6 +46,18 @@ _light = { "bg_primary": "#f7f8fb", "bg_sidebar_a": "#ffffff", "bg_sidebar_b": "
 
 T = _dark if st.session_state.theme == "dark" else _light
 
+# ---------- Theme Helper Colors ----------
+IS_DARK = st.session_state.theme == "dark"
+
+PLOT_PAPER = "#111827" if IS_DARK else "#ffffff"
+PLOT_BG = "#0f1e33" if IS_DARK else "#f8fafc"
+PLOT_GRID = "#1e3a5f" if IS_DARK else "#d1d5db"
+
+CARD_BG = "#1a2236" if IS_DARK else "#ffffff"
+
+TEXT = "#e2e8f0" if IS_DARK else "#111827"
+MUTED = "#94a3b8" if IS_DARK else "#6b7280"
+
 _dynamic_css = f"""
 :root {{
     --bg-primary: {T['bg_primary']};
@@ -74,7 +86,28 @@ _dynamic_css = f"""
 
 _static_css = """
     html, body, [class*="css"] { font-family: 'Inter', -apple-system, sans-serif; }
-    code, pre, .stCode { font-family: 'JetBrains Mono', monospace !important; }
+    code,
+    pre,
+    .stCode {
+        font-family: 'JetBrains Mono', monospace !important;
+    }
+    
+    /* -------- Code Blocks -------- */
+    
+    pre {
+        background: var(--bg-secondary) !important;
+        color: var(--text-primary) !important;
+        border: 1px solid var(--border);
+        border-radius: 12px;
+    }
+    
+    code {
+        color: var(--text-primary) !important;
+    }
+    
+    .stCodeBlock {
+        background: var(--bg-secondary) !important;
+    }
 
     .block-container { padding-top: 1.75rem !important; padding-bottom: 6rem !important; max-width: 1200px; }
     [data-testid="stHeader"] { background-color: transparent !important; }
@@ -156,10 +189,17 @@ _static_css = """
     }
     .stTabs [data-baseweb="tab"]:hover { color: var(--text-primary); }
     .stTabs [aria-selected="true"] {
-        background: linear-gradient(135deg, rgba(139,92,246,0.25), rgba(6,182,212,0.2)) !important;
-        color: #ffffff !important;
-        box-shadow: 0 2px 12px rgba(139, 92, 246, 0.25);
+        background: linear-gradient(
+            135deg,
+            rgba(139,92,246,.25),
+            rgba(6,182,212,.20)
+        ) !important;
+    
+        color: var(--text-primary) !important;
+    
+        box-shadow:0 2px 12px rgba(139,92,246,.25);
     }
+    
 
     /* ---------- Cards ---------- */
     .metric-card, .status-card {
@@ -196,6 +236,10 @@ _static_css = """
     .status-subtitle { font-size: 0.8rem; color: var(--text-muted); }
 
     /* ---------- Chat ---------- */
+    textarea::placeholder{
+    color:var(--text-muted)!important;
+    }
+    
     [data-testid="stChatMessage"] {
         background: var(--surface);
         border: 1px solid var(--border);
@@ -648,9 +692,9 @@ with tab_eval:
             color = "#ef4444" if value < 40 else "#f59e0b" if value < 70 else "#10b981"
             with cols[i]:
                 st.markdown(f"""
-                <div style="background:#1a2236; border:1px solid #1e3a5f; border-radius:8px; padding:10px 4px; text-align:center;">
+                <div style="background:{CARD_BG}; border:1px solid {T["border"]}; border-radius:8px; padding:10px 4px; text-align:center;">
                     <div style="color:{color}; font-size:1.1rem; font-weight:700;">{value:.1f}%</div>
-                    <div style="color:#94a3b8; font-size:0.5rem; margin-top:4px;">{metric}</div>
+                    <div style="color:{MUTED}; font-size:0.5rem; margin-top:4px;">{metric}</div>
                 </div>
                 """, unsafe_allow_html=True)
 
@@ -668,8 +712,8 @@ with tab_eval:
             ))
             fig_radar.update_layout(
                 title="Dynamic Metric Spider Chart",
-                paper_bgcolor='#111827', font=dict(color='#e2e8f0', size=10),
-                polar=dict(radialaxis=dict(visible=True, range=[0, 100], gridcolor="#1e3a5f")),
+                paper_bgcolor=PLOT_PAPER, font=dict(color='#e2e8f0', size=10),
+                polar=dict(radialaxis=dict(visible=True, range=[0, 100], gridcolor=PLOT_GRID)),
                 margin=dict(l=40, r=40, t=40, b=40)
             )
             st.plotly_chart(fig_radar, use_container_width=True)
@@ -681,8 +725,8 @@ with tab_eval:
             ))
             fig_bar.update_layout(
                 title="Performance per Metric",
-                paper_bgcolor='#111827', plot_bgcolor='#0f1e33', font=dict(color='#e2e8f0'),
-                xaxis=dict(range=[0, 100], gridcolor="#1e3a5f"),
+                paper_bgcolor=PLOT_PAPER, plot_bgcolor=PLOT_BG, font=dict(color=TEXT),
+                xaxis=dict(range=[0, 100], gridcolor=PLOT_GRID),
                 margin=dict(l=20, r=20, t=40, b=20)
             )
             st.plotly_chart(fig_bar, use_container_width=True)
@@ -742,12 +786,12 @@ with tab_dash:
             fig_lat.add_trace(go.Scatter(x=df.index, y=df["total_time_ms"], name="Total", fill='tozeroy', line=dict(color="#06b6d4")))
             fig_lat.add_trace(go.Scatter(x=df.index, y=df["llm_time_ms"], name="LLM", line=dict(color="#8b5cf6")))
             fig_lat.add_trace(go.Scatter(x=df.index, y=df["retrieval_ms"], name="Retrieval", line=dict(color="#10b981")))
-            fig_lat.update_layout(title="⚡ Latency over Queries (ms)", paper_bgcolor='#111827', plot_bgcolor='#0f1e33', font=dict(color='#e2e8f0'), margin=dict(l=20, r=20, t=40, b=20))
+            fig_lat.update_layout(title="⚡ Latency over Queries (ms)", paper_bgcolor=PLOT_PAPER, plot_bgcolor=PLOT_BG, font=dict(color=TEXT), margin=dict(l=20, r=20, t=40, b=20))
             st.plotly_chart(fig_lat, use_container_width=True)
 
         with col_tok:
             fig_tok = go.Figure(data=[go.Bar(x=df.index, y=df["tokens"], marker_color=["#1e3a8a", "#3b82f6", "#06b6d4"][:len(df)])])
-            fig_tok.update_layout(title="🪙 Token Usage per Query", paper_bgcolor='#111827', plot_bgcolor='#0f1e33', font=dict(color='#e2e8f0'), margin=dict(l=20, r=20, t=40, b=20))
+            fig_tok.update_layout(title="🪙 Token Usage per Query", paper_bgcolor=PLOT_PAPER, plot_bgcolor=PLOT_BG, font=dict(color=TEXT), margin=dict(l=20, r=20, t=40, b=20))
             st.plotly_chart(fig_tok, use_container_width=True)
 
         col_score, col_dist = st.columns(2)
@@ -757,12 +801,12 @@ with tab_dash:
             fig_score.add_trace(go.Scatter(x=df.index, y=df["score"], mode='lines+markers', line=dict(color="#f59e0b")))
             fig_score.add_hline(y=0.7, line_dash="dash", line_color="#10b981", annotation_text="Good (0.7)")
             fig_score.add_hline(y=0.4, line_dash="dash", line_color="#ef4444", annotation_text="Threshold (0.4)")
-            fig_score.update_layout(title="🎯 Top Retrieval Score per Query", yaxis=dict(range=[0, 1]), paper_bgcolor='#111827', plot_bgcolor='#0f1e33', font=dict(color='#e2e8f0'), margin=dict(l=20, r=20, t=40, b=20))
+            fig_score.update_layout(title="🎯 Top Retrieval Score per Query", yaxis=dict(range=[0, 1]), paper_bgcolor=PLOT_PAPER, plot_bgcolor=PLOT_BG, font=dict(color=TEXT), margin=dict(l=20, r=20, t=40, b=20))
             st.plotly_chart(fig_score, use_container_width=True)
 
         with col_dist:
             fig_dist = go.Figure(data=[go.Histogram(x=df["total_time_ms"], marker_color="#3b82f6", nbinsx=10)])
-            fig_dist.update_layout(title="📊 Latency Distribution", paper_bgcolor='#111827', plot_bgcolor='#0f1e33', font=dict(color='#e2e8f0'), margin=dict(l=20, r=20, t=40, b=20))
+            fig_dist.update_layout(title="📊 Latency Distribution", paper_bgcolor=PLOT_PAPER, plot_bgcolor=PLOT_BG, font=dict(color=TEXT), margin=dict(l=20, r=20, t=40, b=20))
             st.plotly_chart(fig_dist, use_container_width=True)
 
         st.markdown("<div style='height: 16px;'></div>", unsafe_allow_html=True)
@@ -852,7 +896,7 @@ with tab_kb:
                 hole=.5,
                 marker_colors=["#f87171", "#4ade80", "#60a5fa", "#c084fc", "#fbbf24"]
             )])
-            fig_donut.update_layout(title="Chunks by Library", paper_bgcolor='#111827', font=dict(color='#e2e8f0'), margin=dict(l=20, r=20, t=40, b=20))
+            fig_donut.update_layout(title="Chunks by Library", paper_bgcolor=PLOT_PAPER, font=dict(color=TEXT), margin=dict(l=20, r=20, t=40, b=20))
             st.plotly_chart(fig_donut, use_container_width=True)
 
         with col_bar:
@@ -861,7 +905,7 @@ with tab_kb:
                 y=list(type_counts.values()), 
                 marker_color=["#3b82f6", "#06b6d4", "#8b5cf6"]
             )])
-            fig_bar.update_layout(title="Chunks by Doc Type", paper_bgcolor='#111827', plot_bgcolor='#0f1e33', font=dict(color='#e2e8f0'), margin=dict(l=20, r=20, t=40, b=20))
+            fig_bar.update_layout(title="Chunks by Doc Type", paper_bgcolor=PLOT_PAPER, plot_bgcolor=PLOT_BG, font=dict(color=TEXT), margin=dict(l=20, r=20, t=40, b=20))
             st.plotly_chart(fig_bar, use_container_width=True)
 
         # 6. Browse Chunks (Interactive Real-Time Search)
