@@ -23,124 +23,247 @@ from src.evaluation import generate_test_set
 # --- UI CONFIGURATION & CSS ---
 st.set_page_config(page_title="RAG Docs QA Using Python Documentation", page_icon="🔍", layout="wide", initial_sidebar_state="expanded")
 
-st.markdown("""
-<style>
-    /* Dark Mode Trading Dashboard CSS */
-    :root {
-        --bg-primary: #0a0e1a;
-        --bg-secondary: #111827;
-        --border: #1e3a5f;
-    }
-    
-    /* 1. Fix the top gap */
-    .block-container {
-        padding-top: 1.5rem !important; 
-    }
-    
-    /* Hide the default Streamlit header bar completely */
-    [data-testid="stHeader"] {
-        background-color: transparent !important;
-    }
+# Retrieval depth is a backend concern, not something visitors need to tune -
+# fixed here instead of exposed as a sidebar slider.
+DEFAULT_TOP_K = 4
 
-    /* 2. Color setups */
-    .stApp { background-color: var(--bg-primary); }
-    [data-testid="stSidebar"] { 
-        background: var(--bg-secondary) !important; 
-        border-right: 1px solid var(--border); 
-    }
-    
-    /* 3. Header styling */
+if "theme" not in st.session_state:
+    st.session_state.theme = "dark"
+
+_dark = {
+    "bg_primary": "#05070d", "bg_sidebar_a": "#0a0e1a", "bg_sidebar_b": "#080b14",
+    "surface": "rgba(255, 255, 255, 0.035)", "surface_hover": "rgba(255, 255, 255, 0.06)",
+    "border": "rgba(255, 255, 255, 0.08)", "text_primary": "#f1f5f9", "text_muted": "#94a3b8",
+    "st_bg": "#05070d", "st_secondary_bg": "#0d1220", "st_text": "#f1f5f9",
+    "glow_a": "rgba(139, 92, 246, 0.14)", "glow_b": "rgba(6, 182, 212, 0.10)",
+}
+_light = {
+    "bg_primary": "#f7f8fb", "bg_sidebar_a": "#ffffff", "bg_sidebar_b": "#f3f4f8",
+    "surface": "rgba(15, 23, 42, 0.035)", "surface_hover": "rgba(15, 23, 42, 0.06)",
+    "border": "rgba(15, 23, 42, 0.10)", "text_primary": "#0f172a", "text_muted": "#475569",
+    "st_bg": "#f7f8fb", "st_secondary_bg": "#ffffff", "st_text": "#0f172a",
+    "glow_a": "rgba(139, 92, 246, 0.10)", "glow_b": "rgba(6, 182, 212, 0.08)",
+}
+T = _dark if st.session_state.theme == "dark" else _light
+
+_dynamic_css = f"""
+:root {{
+    --bg-primary: {T['bg_primary']};
+    --bg-secondary: {T['st_secondary_bg']};
+    --surface: {T['surface']};
+    --surface-hover: {T['surface_hover']};
+    --border: {T['border']};
+    --border-strong: rgba(139, 92, 246, 0.35);
+    --accent-a: #06b6d4;
+    --accent-b: #8b5cf6;
+    --accent-c: #ec4899;
+    --text-primary: {T['text_primary']};
+    --text-muted: {T['text_muted']};
+}}
+.stApp {{
+    background:
+        radial-gradient(ellipse 900px 500px at 12% -10%, {T['glow_a']}, transparent 60%),
+        radial-gradient(ellipse 900px 500px at 100% 0%, {T['glow_b']}, transparent 55%),
+        {T['bg_primary']};
+}}
+[data-testid="stSidebar"] {{
+    background: linear-gradient(180deg, {T['bg_sidebar_a']} 0%, {T['bg_sidebar_b']} 100%) !important;
+    border-right: 1px solid {T['border']};
+}}
+"""
+
+st.markdown(_dynamic_css + """
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+    html, body, [class*="css"] { font-family: 'Inter', -apple-system, sans-serif; }
+    code, pre, .stCode { font-family: 'JetBrains Mono', monospace !important; }
+
+    .block-container { padding-top: 1.75rem !important; padding-bottom: 6rem !important; max-width: 1200px; }
+    [data-testid="stHeader"] { background-color: transparent !important; }
+
+    [data-testid="stSidebar"] * { color: var(--text-primary); }
+    [data-testid="stSidebar"] h3, [data-testid="stSidebar"] strong { letter-spacing: 0.2px; }
+
+    /* ---------- Header ---------- */
     .rag-header {
-        background: linear-gradient(135deg, #0f1e33 0%, #0d2240 50%, #0a1929 100%);
-        border: 1px solid var(--border);
-        border-radius: 16px;
-        padding: 24px 32px;
-        margin-bottom: 24px;
-        margin-top: 0px; 
+        position: relative;
+        overflow: hidden;
+        background: linear-gradient(135deg, rgba(139,92,246,0.14) 0%, rgba(6,182,212,0.10) 50%, rgba(236,72,153,0.08) 100%);
+        border: 1px solid var(--border-strong);
+        border-radius: 20px;
+        padding: 30px 36px;
+        margin-bottom: 28px;
+        box-shadow: 0 8px 40px rgba(99, 39, 226, 0.12), inset 0 1px 0 rgba(255,255,255,0.06);
+    }
+    .rag-header::before {
+        content: "";
+        position: absolute; inset: 0;
+        background-image: radial-gradient(circle, rgba(255,255,255,0.06) 1px, transparent 1px);
+        background-size: 22px 22px;
+        opacity: 0.35;
+        pointer-events: none;
     }
     .rag-title {
-        font-size: 1.8rem; font-weight: 800;
-        background: linear-gradient(135deg, #06b6d4, #3b82f6);
+        position: relative;
+        font-size: 2rem; font-weight: 800; letter-spacing: -0.5px;
+        background: linear-gradient(135deg, #22d3ee, #a78bfa 55%, #f472b6);
         -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+        background-size: 200% auto;
+        animation: shimmer 6s ease-in-out infinite;
     }
-            
-    /* 4. Feature Tags CSS */
+    @keyframes shimmer {
+        0%, 100% { background-position: 0% center; }
+        50% { background-position: 100% center; }
+    }
+
     .header-tag {
-        background: #0d2240; 
-        border: 1px solid #1e3a5f; 
-        border-radius: 6px;
-        padding: 4px 10px;
-        font-size: 0.75rem;
-        color: #94a3b8; 
+        position: relative;
+        background: rgba(255,255,255,0.05);
+        border: 1px solid var(--border);
+        border-radius: 999px;
+        padding: 6px 14px;
+        font-size: 0.78rem;
+        font-weight: 500;
+        color: var(--text-muted);
         display: inline-flex;
         align-items: center;
         gap: 6px;
-        margin-right: 8px; 
-        margin-top: 12px; 
+        margin-right: 8px;
+        margin-top: 14px;
+        backdrop-filter: blur(6px);
+        transition: all 0.2s ease;
+    }
+    .header-tag:hover {
+        border-color: var(--border-strong);
+        color: var(--text-primary);
+        transform: translateY(-1px);
     }
 
-    /* 5. Custom Tab Styling */
+    /* ---------- Tabs ---------- */
     .stTabs [data-baseweb="tab-list"] {
-        background: var(--bg-secondary);
-        border-radius: 10px;
-        padding: 4px;
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        padding: 6px;
         gap: 4px;
+        backdrop-filter: blur(8px);
     }
     .stTabs [data-baseweb="tab"] {
         background: transparent;
-        color: #94a3b8;
-        border-radius: 8px;
-        font-weight: 500;
+        color: var(--text-muted);
+        border-radius: 10px;
+        font-weight: 600;
+        font-size: 0.9rem;
+        transition: all 0.2s ease;
     }
+    .stTabs [data-baseweb="tab"]:hover { color: var(--text-primary); }
     .stTabs [aria-selected="true"] {
-        background: #1a2236 !important; /* Darker background for active tab */
-        color: #e2e8f0 !important; /* White text for active tab */
+        background: linear-gradient(135deg, rgba(139,92,246,0.25), rgba(6,182,212,0.2)) !important;
+        color: #ffffff !important;
+        box-shadow: 0 2px 12px rgba(139, 92, 246, 0.25);
     }
-            
-    /* 6. Metric Cards CSS */
-    .metric-card {
-        background: #1a2236;
-        border: 1px solid #1e3a5f;
-        border-radius: 12px;
-        padding: 16px;
+
+    /* ---------- Cards ---------- */
+    .metric-card, .status-card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        padding: 18px;
         text-align: center;
+        backdrop-filter: blur(8px);
+        transition: transform 0.2s ease, border-color 0.2s ease;
     }
+    .metric-card:hover { transform: translateY(-2px); border-color: var(--border-strong); }
     .metric-value {
-        font-size: 1.8rem;
-        font-weight: 700;
-        background: linear-gradient(135deg, #06b6d4, #3b82f6);
+        font-size: 1.9rem;
+        font-weight: 800;
+        background: linear-gradient(135deg, #22d3ee, #a78bfa);
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
     }
     .metric-label {
-        font-size: 0.75rem;
-        color: #94a3b8;
+        font-size: 0.72rem;
+        color: var(--text-muted);
         text-transform: uppercase;
-        letter-spacing: 0.5px;
-        margin-top: 4px;
+        letter-spacing: 0.6px;
+        margin-top: 6px;
+        font-weight: 600;
     }
-            /* 6. System Status Cards */
-    .status-card {
-        border-radius: 8px;
-        padding: 16px;
-        text-align: center;
-        border: 1px solid #1e3a5f;
-        background: #111827;
+    .status-card.available { border-color: rgba(16,185,129,0.4); background: rgba(16, 185, 129, 0.06); }
+    .status-card.unavailable { border-color: rgba(239,68,68,0.4); background: rgba(239, 68, 68, 0.06); }
+    .status-dot { height: 10px; width: 10px; border-radius: 50%; display: inline-block; margin-right: 8px; }
+    .dot-green { background-color: #10b981; box-shadow: 0 0 8px #10b981; }
+    .dot-red { background-color: #ef4444; box-shadow: 0 0 8px #ef4444; }
+    .status-title { font-weight: 700; font-size: 1.05rem; color: var(--text-primary); margin-bottom: 4px; }
+    .status-subtitle { font-size: 0.8rem; color: var(--text-muted); }
+
+    /* ---------- Chat ---------- */
+    [data-testid="stChatMessage"] {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        padding: 4px 6px;
+        margin-bottom: 10px;
+        backdrop-filter: blur(6px);
     }
-    .status-card.available { border-color: #059669; background: rgba(16, 185, 129, 0.05); }
-    .status-card.unavailable { border-color: #dc2626; background: rgba(239, 68, 68, 0.05); }
-    
-    .status-dot {
-        height: 10px; width: 10px;
-        border-radius: 50%;
-        display: inline-block;
-        margin-right: 8px;
+    [data-testid="stChatMessage"]:hover { border-color: rgba(139, 92, 246, 0.25); }
+    [data-testid="stChatInput"] textarea {
+        background: var(--surface) !important;
+        border: 1px solid var(--border) !important;
+        border-radius: 14px !important;
     }
-    .dot-green { background-color: #10b981; }
-    .dot-red { background-color: #ef4444; }
-    
-    .status-title { font-weight: 700; font-size: 1.1rem; color: #e2e8f0; margin-bottom: 4px;}
-    .status-subtitle { font-size: 0.8rem; color: #94a3b8; }
+    [data-testid="stChatInput"]:focus-within textarea { border-color: var(--border-strong) !important; }
+
+    /* ---------- Buttons ---------- */
+    .stButton > button {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        color: var(--text-primary);
+        font-weight: 500;
+        transition: all 0.2s ease;
+    }
+    .stButton > button:hover {
+        border-color: var(--border-strong);
+        background: var(--surface-hover);
+        transform: translateY(-1px);
+    }
+    .stButton > button[kind="primary"] {
+        background: linear-gradient(135deg, #7c3aed, #06b6d4);
+        border: none;
+        box-shadow: 0 4px 20px rgba(124, 58, 237, 0.35);
+    }
+    .stButton > button[kind="primary"]:hover { box-shadow: 0 6px 26px rgba(124, 58, 237, 0.5); }
+
+    /* ---------- Inputs / Selects ---------- */
+    [data-testid="stSelectbox"] > div > div, [data-testid="stTextInput"] > div > div {
+        background: var(--surface) !important;
+        border-radius: 10px !important;
+        border-color: var(--border) !important;
+    }
+
+    /* ---------- Misc ---------- */
+    ::-webkit-scrollbar { width: 10px; height: 10px; }
+    ::-webkit-scrollbar-track { background: var(--bg-primary); }
+    ::-webkit-scrollbar-thumb { background: rgba(139, 92, 246, 0.3); border-radius: 8px; }
+    ::-webkit-scrollbar-thumb:hover { background: rgba(139, 92, 246, 0.5); }
+
+    /* ---------- Pinned chat input (stays fixed at the bottom, like
+       Claude/ChatGPT/Gemini, instead of scrolling away with messages) ---------- */
+    [data-testid="stBottomBlockContainer"] {
+        position: sticky;
+        bottom: 0;
+        z-index: 999;
+        background: linear-gradient(180deg, transparent 0%, var(--bg-primary) 25%);
+        padding-top: 14px;
+        padding-bottom: 10px;
+    }
+    [data-testid="stChatInput"] {
+        box-shadow: 0 -4px 24px rgba(0,0,0,0.25);
+    }
+
+    hr, [data-testid="stDivider"] { border-color: var(--border) !important; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -154,8 +277,18 @@ if "metrics_log" not in st.session_state:
 with st.sidebar:
     st.markdown("### 🔍 RAG QA System")
     st.caption("Python Documentation AI")
+
+    theme_choice = st.radio(
+        "Theme", ["🌙 Dark", "☀️ Light"],
+        index=0 if st.session_state.theme == "dark" else 1,
+        horizontal=True, label_visibility="collapsed",
+    )
+    new_theme = "dark" if "Dark" in theme_choice else "light"
+    if new_theme != st.session_state.theme:
+        st.session_state.theme = new_theme
+        st.rerun()
+
     st.divider()
-        # Inside with st.sidebar:
     show_sources = st.toggle("Show Sources", value=True)
     st.markdown("**📚 Knowledge Base**")
     _kb_ready = os.path.exists("vectorstore/chroma_db")
@@ -199,12 +332,11 @@ with st.sidebar:
             api_key = st.text_input("OpenAI API Key", type="password")
     else:
         st.caption("⚠️ Requires Ollama running on this machine. Won't work on a hosted deployment.")
-        
+
     st.divider()
     st.markdown("**⚙️ Retrieval Settings**")
-    top_k = st.slider("Top-K Chunks", min_value=1, max_value=10, value=3)
+    top_k = DEFAULT_TOP_K  # tuned server-side, not user-facing
 
-    # NEW: Library Filter
     filter_lib = st.selectbox(
         "Filter Library", 
         ["All Libraries", "PANDAS", "NUMPY", "SKLEARN", "MATPLOTLIB"],
@@ -255,68 +387,56 @@ tab_chat, tab_eval, tab_dash, tab_kb, tab_sys = st.tabs([
     "⚙️ System"
 ])
 
-# --- CHAT TAB (Clean LangChain Logic) ---
 # --- CHAT TAB (Dynamic Telemetry Logic) ---
 with tab_chat:
-    # 1. DISPLAY CHAT HISTORY
-    for msg in st.session_state.chat_history:
-        with st.chat_message(msg["role"]):
-            st.markdown(msg["content"])
+    USER_AVATAR = "🧑‍💻"
+    BOT_AVATAR = "🤖"
 
-    # 2. CAPTURE INPUT (Standard Input OR Sample Button)
+    # 1. DISPLAY CHAT HISTORY (single source of truth - nothing is ever
+    #    rendered outside this loop, which is what keeps the chat stable
+    #    across reruns instead of messages jumping between positions)
+    for msg in st.session_state.chat_history:
+        avatar = USER_AVATAR if msg["role"] == "user" else BOT_AVATAR
+        with st.chat_message(msg["role"], avatar=avatar):
+            st.markdown(msg["content"])
+            if msg.get("sources"):
+                with st.expander("📚 View Retrieved Chunks"):
+                    for i, src in enumerate(msg["sources"]):
+                        st.info(f"**Chunk {i+1} (Source: {src['library']})**\n\n{src['snippet']}...")
+
+    # 2. CAPTURE INPUT (typed message OR a sample-query button from the sidebar)
     user_input = st.chat_input("Ask a question about Pandas, Numpy, Sklearn...")
-    
-    # Check if a sample query was clicked in the sidebar
+
     if "sample_query" in st.session_state:
-        final_query = st.session_state.sample_query
-        del st.session_state.sample_query # Clear it immediately
-        # Force a chat message to appear for the sample query
-        with st.chat_message("user"):
-            st.markdown(final_query)
+        final_query = st.session_state.pop("sample_query")
     else:
         final_query = user_input
 
-    # 3. RUN PIPELINE IF QUERY EXISTS
+    # 3. RUN PIPELINE IF A NEW QUERY EXISTS
     if final_query:
-        # Only manually display/append if it came from the chat_input 
-        # (Sample queries are handled above or automatically by the rerun)
-        if user_input:
-            with st.chat_message("user"):
-                st.markdown(user_input)
-            st.session_state.chat_history.append({"role": "user", "content": user_input})
-        elif final_query:
-            st.session_state.chat_history.append({"role": "user", "content": final_query})
+        st.session_state.chat_history.append({"role": "user", "content": final_query})
 
-        # ⏱️ Start Total Pipeline Timer
         start_total = time.time()
-        
+
         try:
             vector_db = load_vector_db()
             if not vector_db:
                 st.error("Vector DB not found. Please click 'Build Knowledge Base'.")
                 st.stop()
 
-           # ⏱️ Start Retrieval Timer
             start_retrieval = time.time()
             with st.spinner("🔍 Retrieving documents..."):
-                # --- METADATA FILTER LOGIC ---
-                # Define the filter only if a specific library is selected
                 filter_dict = {"library": filter_lib.lower()} if filter_lib != "All Libraries" else None
-                
-                # Perform the filtered search with explicit arguments
                 retrieved_docs = vector_db.similarity_search(
-                    query=final_query, 
-                    k=top_k, 
-                    filter=filter_dict  # 👈 Explicitly passing the filter dictionary
+                    query=final_query,
+                    k=top_k,
+                    filter=filter_dict
                 )
                 context_text = "\n\n".join([doc.page_content for doc in retrieved_docs])
-
             retrieval_ms = (time.time() - start_retrieval) * 1000
 
-            # ⏱️ Start LLM Generation Timer
             start_llm = time.time()
             with st.spinner("🧠 Synthesizing answer..."):
-
                 if "Ollama" in llm_choice:
                     from langchain_community.chat_models import ChatOllama
                     llm = ChatOllama(model="llama3:latest", temperature=0.1)
@@ -330,46 +450,32 @@ with tab_chat:
 
                 prompt_template = get_rag_prompt()
                 chain = prompt_template | llm
-                
+
                 response = chain.invoke({
                     "context": context_text,
                     "history": "",
                     "question": final_query
                 })
                 answer = response.content
-                
             llm_ms = (time.time() - start_llm) * 1000
-                
-            with st.chat_message("assistant"):
-                st.markdown(answer)
-                
-                # Use the variable from sidebar; ensure 'show_sources' exists in sidebar code!
-                if show_sources and retrieved_docs:
-                    with st.expander("📚 View Retrieved Chunks"):
-                        for i, doc in enumerate(retrieved_docs):
-                            # Using metadata from our refined scraper
-                            lib_name = doc.metadata.get('library', 'Unknown').upper()
-                            st.info(f"**Chunk {i+1} (Source: {lib_name})**\n\n{doc.page_content[:200]}...")
 
-            st.session_state.chat_history.append({"role": "assistant", "content": answer})
+            sources = None
+            if show_sources and retrieved_docs:
+                sources = [
+                    {"library": doc.metadata.get("library", "Unknown").upper(), "snippet": doc.page_content[:200]}
+                    for doc in retrieved_docs
+                ]
 
-            # ⏱️ Telemetry Calculations
+            st.session_state.chat_history.append({"role": "assistant", "content": answer, "sources": sources})
+
+            # ⏱️ Telemetry
             total_ms = (time.time() - start_total) * 1000
             total_text = f"{final_query} {context_text} {answer}"
             estimated_tokens = int(len(total_text.split()) * 1.3)
-      
+
             import random
+            mock_confidence_score = random.uniform(0.75, 0.98)
 
-            # Generate a mock confidence score
-            mock_confidence_score = random.uniform(0.75, 0.98) 
-
-            # Safely extract the library name from the retrieved document metadata
-            retrieved_lib = "None"
-            if retrieved_docs and len(retrieved_docs) > 0:
-                # Use .lower() to ensure it matches your "eval_lib" format (all, numpy, etc.)
-                retrieved_lib = retrieved_docs[0].metadata.get("library", "unknown").lower()
-
-            # --- Inside tab_chat Pipeline ---
             st.session_state.metrics_log.append({
                 "total_time_ms": total_ms,
                 "llm_time_ms": llm_ms,
@@ -377,14 +483,18 @@ with tab_chat:
                 "tokens": estimated_tokens,
                 "score": mock_confidence_score,
                 "query": final_query,
-                # ADD THESE TWO LINES BELOW
                 "expected_library": filter_lib.lower() if filter_lib != "All Libraries" else "all",
                 "retrieved_library": retrieved_docs[0].metadata.get("library", "unknown").lower() if retrieved_docs else "none"
             })
 
+            # Single rerun so the message we just appended renders through
+            # the stable history loop above instead of a second, separate
+            # render path (that separate path was what caused the flicker).
+            st.rerun()
+
         except Exception as e:
             st.error(f"Pipeline Error: {str(e)}")
-            
+
 # --- EVALUATION TAB ---
 if "eval_completed" not in st.session_state:
     st.session_state.eval_completed = False
@@ -853,7 +963,6 @@ streamlit run app.py
     ├── vectorstore/
     │   └── chroma_db/             # Pre-built, persisted ChromaDB store
     └── src/
-<<<<<<< HEAD
         ├── data_loader.py         # Multi-library documentation scraper
         ├── chunking.py            # Text splitting logic
         ├── embeddings.py          # Local embedding model loader
@@ -863,9 +972,3 @@ streamlit run app.py
         ├── llm.py                 # Pluggable LLM backend (Groq/OpenAI/Ollama)
         └── evaluation.py          # Dynamic test-set generation & scoring
     """, language="text")
-=======
-        ├── data_loader.py    # Multi-library scraper
-        ├── chunking.py       # Text splitting logic
-        └── embeddings.py     # Local vector generation
-    """, language="text")
->>>>>>> 5f631b83c009d70463103e52118b95b913e8fb27

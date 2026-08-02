@@ -1,5 +1,6 @@
 import time
 import random
+
 def record_latency(start_time):
     return round(time.time() - start_time, 2)
 
