@@ -38,11 +38,24 @@ _dark = {
     "glow_a": "rgba(139, 92, 246, 0.14)", "glow_b": "rgba(6, 182, 212, 0.10)",
 }
 _light = {
-    "bg_primary": "#f7f8fb", "bg_sidebar_a": "#ffffff", "bg_sidebar_b": "#f3f4f8",
-    "surface": "rgba(15, 23, 42, 0.035)", "surface_hover": "rgba(15, 23, 42, 0.06)",
-    "border": "rgba(15, 23, 42, 0.10)", "text_primary": "#0f172a", "text_muted": "#475569",
-    "st_bg": "#f7f8fb", "st_secondary_bg": "#ffffff", "st_text": "#0f172a",
-    "glow_a": "rgba(139, 92, 246, 0.10)", "glow_b": "rgba(6, 182, 212, 0.08)",
+    "bg_primary": "#ffffff",
+    "bg_sidebar_a": "#ffffff",
+    "bg_sidebar_b": "#f8fafc",
+
+    "surface": "#ffffff",
+    "surface_hover": "#f1f5f9",
+
+    "border": "#d1d5db",
+
+    "text_primary": "#111827",
+    "text_muted": "#6b7280",
+
+    "st_bg": "#f9fafb",
+    "st_secondary_bg": "#ffffff",
+    "st_text": "#111827",
+
+    "glow_a": "rgba(99,102,241,0.08)",
+    "glow_b": "rgba(59,130,246,0.08)",
 }
 T = _dark if st.session_state.theme == "dark" else _light
 
