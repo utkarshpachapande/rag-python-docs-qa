@@ -1,5 +1,7 @@
 import time
 import random
+def record_latency(start_time):
+    return round(time.time() - start_time, 2)
 
 def generate_test_set(vector_db, n_samples, library_filter="all"):
     """
