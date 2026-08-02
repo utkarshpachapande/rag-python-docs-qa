@@ -853,6 +853,7 @@ streamlit run app.py
     ├── vectorstore/
     │   └── chroma_db/             # Pre-built, persisted ChromaDB store
     └── src/
+<<<<<<< HEAD
         ├── data_loader.py         # Multi-library documentation scraper
         ├── chunking.py            # Text splitting logic
         ├── embeddings.py          # Local embedding model loader
@@ -862,3 +863,9 @@ streamlit run app.py
         ├── llm.py                 # Pluggable LLM backend (Groq/OpenAI/Ollama)
         └── evaluation.py          # Dynamic test-set generation & scoring
     """, language="text")
+=======
+        ├── data_loader.py    # Multi-library scraper
+        ├── chunking.py       # Text splitting logic
+        └── embeddings.py     # Local vector generation
+    """, language="text")
+>>>>>>> 5f631b83c009d70463103e52118b95b913e8fb27
