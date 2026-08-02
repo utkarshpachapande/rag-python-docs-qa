@@ -331,17 +331,17 @@ with st.sidebar:
     st.markdown("### 🔍 RAG QA System")
     st.caption("Python Documentation AI")
 
-    theme_choice = st.radio(
-        "Theme", ["🌙 Dark", "☀️ Light"],
-        index=0 if st.session_state.theme == "dark" else 1,
-        horizontal=True, label_visibility="collapsed",
-    )
-    new_theme = "dark" if "Dark" in theme_choice else "light"
-    if new_theme != st.session_state.theme:
-        st.session_state.theme = new_theme
-        st.rerun()
+    # theme_choice = st.radio(
+    #     "Theme", ["🌙 Dark", "☀️ Light"],
+    #     index=0 if st.session_state.theme == "dark" else 1,
+    #     horizontal=True, label_visibility="collapsed",
+    # )
+    # new_theme = "dark" if "Dark" in theme_choice else "light"
+    # if new_theme != st.session_state.theme:
+    #     st.session_state.theme = new_theme
+    #     st.rerun()
 
-    st.divider()
+    # st.divider()
     st.markdown("**🤖 LLM Backend**")
     llm_choice = st.selectbox("Model", ["Groq (Llama 3 - Free)", "OpenAI API", "Ollama (Local Only)"])
     api_key = None
