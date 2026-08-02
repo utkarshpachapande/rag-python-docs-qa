@@ -1,0 +1,92 @@
+[
+    {
+        "url": "https://pandas.pydata.org/docs/user_guide/10min.html",
+        "library": "pandas",
+        "content_length": 36094
+    },
+    {
+        "url": "https://numpy.org/doc/stable/user/absolute_beginners.html",
+        "library": "numpy",
+        "content_length": 48512
+    },
+    {
+        "url": "https://scikit-learn.org/stable/tutorial/basic/tutorial.html",
+        "library": "sklearn",
+        "content_length": 517
+    },
+    {
+        "url": "https://scikit-learn.org/stable/modules/clustering.html",
+        "library": "sklearn",
+        "content_length": 83620
+    },
+    {
+        "url": "https://matplotlib.org/stable/tutorials/introductory/sample_plots.html",
+        "library": "matplotlib",
+        "content_length": 806
+    },
+    {
+        "url": "https://matplotlib.org/stable/users/explain/base/index.html",
+        "library": "matplotlib",
+        "content_length": 806
+    },
+    {
+        "url": "https://matplotlib.org/stable/users/explain/axes/index.html",
+        "library": "matplotlib",
+        "content_length": 3706
+    },
+    {
+        "url": "https://docs.python.org/3/tutorial/introduction.html",
+        "library": "python_core",
+        "content_length": 18938
+    },
+    {
+        "url": "https://docs.python.org/3/tutorial/controlflow.html",
+        "library": "python_core",
+        "content_length": 38800
+    },
+    {
+        "url": "https://docs.python.org/3/tutorial/datastructures.html",
+        "library": "python_core",
+        "content_length": 24959
+    },
+    {
+        "url": "https://docs.python.org/3/library/functions.html",
+        "library": "python_core",
+        "content_length": 79381
+    },
+    {
+        "url": "https://pandas.pydata.org/docs/user_guide/indexing.html",
+        "library": "pandas",
+        "content_length": 93891
+    },
+    {
+        "url": "https://pandas.pydata.org/docs/user_guide/missing_data.html",
+        "library": "pandas",
+        "content_length": 27653
+    },
+    {
+        "url": "https://numpy.org/doc/stable/user/basics.creation.html",
+        "library": "numpy",
+        "content_length": 14693
+    },
+    {
+        "url": "https://numpy.org/doc/stable/user/basics.indexing.html",
+        "library": "numpy",
+        "content_length": 31674
+    },
+    {
+        "url": "https://scikit-learn.org/stable/modules/linear_model.html",
+        "library": "sklearn",
+        "content_length": 69220
+    },
+    {
+        "url": "https://scikit-learn.org/stable/modules/ensemble.html",
+        "library": "sklearn",
+        "content_length": 70622
+    },
+    {
+        "url": "https://matplotlib.org/stable/users/explain/axes/axes_intro.html",
+        "library": "matplotlib",
+        "content_length": 9401
+    }
+]
