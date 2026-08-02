@@ -72,11 +72,7 @@ _dynamic_css = f"""
 }}
 """
 
-st.markdown("""
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-<style>
-""" + _dynamic_css + """
+_static_css = """
     html, body, [class*="css"] { font-family: 'Inter', -apple-system, sans-serif; }
     code, pre, .stCode { font-family: 'JetBrains Mono', monospace !important; }
 
@@ -266,7 +262,19 @@ st.markdown("""
 
     hr, [data-testid="stDivider"] { border-color: var(--border) !important; }
 </style>
-""", unsafe_allow_html=True)
+"""
+
+_full_css = "\n".join(
+    line for line in (_dynamic_css + _static_css).split("\n") if line.strip() != ""
+)
+
+st.markdown(
+    '<link rel="preconnect" href="https://fonts.googleapis.com">'
+    '<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">'
+    '<style>'
+    + _full_css,
+    unsafe_allow_html=True,
+)
 
 # --- INITIALIZATION ---
 if "chat_history" not in st.session_state:
