@@ -72,10 +72,11 @@ _dynamic_css = f"""
 }}
 """
 
-st.markdown(_dynamic_css + """
+st.markdown("""
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
+""" + _dynamic_css + """
     html, body, [class*="css"] { font-family: 'Inter', -apple-system, sans-serif; }
     code, pre, .stCode { font-family: 'JetBrains Mono', monospace !important; }
 
@@ -289,24 +290,6 @@ with st.sidebar:
         st.rerun()
 
     st.divider()
-    show_sources = st.toggle("Show Sources", value=True)
-    st.markdown("**📚 Knowledge Base**")
-    _kb_ready = os.path.exists("vectorstore/chroma_db")
-    if _kb_ready:
-        st.success("✅ Knowledge base ready (228 chunks pre-loaded)")
-    else:
-        # Fallback only - the repo ships with a pre-built vector store,
-        # so this should rarely be needed.
-        st.warning("Knowledge base not found.")
-        if st.button("🚀 Build Knowledge Base", use_container_width=True):
-            with st.spinner("Scraping docs & building Vector DB..."):
-                docs = load_documentation_data()
-                chunks = chunk_documents(docs)
-                build_vector_db(chunks)
-                st.success("✅ Ready!")
-                st.rerun()
-
-    st.divider()
     st.markdown("**🤖 LLM Backend**")
     llm_choice = st.selectbox("Model", ["Groq (Llama 3 - Free)", "OpenAI API", "Ollama (Local Only)"])
     api_key = None
@@ -334,16 +317,6 @@ with st.sidebar:
         st.caption("⚠️ Requires Ollama running on this machine. Won't work on a hosted deployment.")
 
     st.divider()
-    st.markdown("**⚙️ Retrieval Settings**")
-    top_k = DEFAULT_TOP_K  # tuned server-side, not user-facing
-
-    filter_lib = st.selectbox(
-        "Filter Library", 
-        ["All Libraries", "PANDAS", "NUMPY", "SKLEARN", "MATPLOTLIB"],
-        index=0
-    )
-    
-    st.divider()
 
     # NEW: Sample Queries
     st.markdown("### 💡 Sample Queries")
@@ -363,6 +336,11 @@ with st.sidebar:
         if st.button(f"▶ {q}", use_container_width=True):
             st.session_state.sample_query = q
             st.rerun()
+
+# --- BACKEND DEFAULTS (previously user-facing sidebar controls) ---
+show_sources = True
+filter_lib = "All Libraries"
+top_k = DEFAULT_TOP_K
 
 # --- HEADER ---
 st.markdown("""
@@ -421,8 +399,17 @@ with tab_chat:
         try:
             vector_db = load_vector_db()
             if not vector_db:
-                st.error("Vector DB not found. Please click 'Build Knowledge Base'.")
-                st.stop()
+                # No visible "Build Knowledge Base" control anymore - the repo
+                # ships with a pre-built vector store, so this is just a
+                # silent, automatic fallback for the rare case it's missing.
+                with st.spinner("Setting up knowledge base..."):
+                    docs = load_documentation_data()
+                    chunks = chunk_documents(docs)
+                    build_vector_db(chunks)
+                    vector_db = load_vector_db()
+                if not vector_db:
+                    st.error("Could not initialize the knowledge base. Please try again shortly.")
+                    st.stop()
 
             start_retrieval = time.time()
             with st.spinner("🔍 Retrieving documents..."):
