@@ -861,34 +861,34 @@ with tab_kb:
             st.plotly_chart(fig_bar, use_container_width=True)
 
         # 6. Browse Chunks (Interactive Real-Time Search)
-        st.markdown("### 🔎 Browse Chunks")
+        # st.markdown("### 🔎 Browse Chunks")
         
-        col_filt1, col_filt2 = st.columns([1, 2])
-        with col_filt1:
-            lib_filter = st.selectbox("Filter by Library", ["All"] + list(lib_counts.keys()))
-        with col_filt2:
-            search_query = st.text_input("Search in chunks", placeholder="e.g. array creation...")
+        # col_filt1, col_filt2 = st.columns([1, 2])
+        # with col_filt1:
+        #     lib_filter = st.selectbox("Filter by Library", ["All"] + list(lib_counts.keys()))
+        # with col_filt2:
+        #     search_query = st.text_input("Search in chunks", placeholder="e.g. array creation...")
         
-        # Apply filters to the real data
-        filtered_chunks = all_chunks
-        if lib_filter != "All":
-            filtered_chunks = [c for c in filtered_chunks if c.metadata.get('library', '').upper() == lib_filter]
-        if search_query:
-            filtered_chunks = [c for c in filtered_chunks if search_query.lower() in c.page_content.lower()]
+        # # Apply filters to the real data
+        # filtered_chunks = all_chunks
+        # if lib_filter != "All":
+        #     filtered_chunks = [c for c in filtered_chunks if c.metadata.get('library', '').upper() == lib_filter]
+        # if search_query:
+        #     filtered_chunks = [c for c in filtered_chunks if search_query.lower() in c.page_content.lower()]
         
-        display_limit = 10
-        st.caption(f"Showing {min(display_limit, len(filtered_chunks))} of {len(filtered_chunks)} matching chunks")
+        # display_limit = 10
+        # st.caption(f"Showing {min(display_limit, len(filtered_chunks))} of {len(filtered_chunks)} matching chunks")
         
-        # Render the drop-down expanders for the results
-        for chunk in filtered_chunks[:display_limit]:
-            lib_name = chunk.metadata.get('library', 'UNKNOWN').upper()
-            # Grab the first 60 characters for the title preview
-            preview = chunk.page_content[:60].replace('\n', ' ') + "..."
+        # # Render the drop-down expanders for the results
+        # for chunk in filtered_chunks[:display_limit]:
+        #     lib_name = chunk.metadata.get('library', 'UNKNOWN').upper()
+        #     # Grab the first 60 characters for the title preview
+        #     preview = chunk.page_content[:60].replace('\n', ' ') + "..."
             
-            with st.expander(f"[{lib_name}] {preview}"):
-                st.markdown("**Source Content:**")
-                st.code(chunk.page_content, language="python")
-                st.markdown(f"**Metadata:** `{chunk.metadata}`")
+        #     with st.expander(f"[{lib_name}] {preview}"):
+        #         st.markdown("**Source Content:**")
+        #         st.code(chunk.page_content, language="python")
+        #         st.markdown(f"**Metadata:** `{chunk.metadata}`")
 
 # --- SYSTEM TAB ---
 # --- SYSTEM TAB ---
