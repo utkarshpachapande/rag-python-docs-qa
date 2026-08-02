@@ -1,4 +1,5 @@
 import streamlit as st
+import os
 import time
 import pandas as pd
 import numpy as np
@@ -157,30 +158,45 @@ with st.sidebar:
         # Inside with st.sidebar:
     show_sources = st.toggle("Show Sources", value=True)
     st.markdown("**📚 Knowledge Base**")
-    if st.button("🚀 Build Knowledge Base", use_container_width=True):
-        with st.spinner("Scraping docs & building Vector DB..."):
-            docs = load_documentation_data()
-            chunks = chunk_documents(docs)
-            build_vector_db(chunks)
-            st.success("✅ Ready!")
-            
+    _kb_ready = os.path.exists("vectorstore/chroma_db")
+    if _kb_ready:
+        st.success("✅ Knowledge base ready (228 chunks pre-loaded)")
+    else:
+        # Fallback only - the repo ships with a pre-built vector store,
+        # so this should rarely be needed.
+        st.warning("Knowledge base not found.")
+        if st.button("🚀 Build Knowledge Base", use_container_width=True):
+            with st.spinner("Scraping docs & building Vector DB..."):
+                docs = load_documentation_data()
+                chunks = chunk_documents(docs)
+                build_vector_db(chunks)
+                st.success("✅ Ready!")
+                st.rerun()
+
     st.divider()
     st.markdown("**🤖 LLM Backend**")
     llm_choice = st.selectbox("Model", ["Groq (Llama 3 - Free)", "OpenAI API", "Ollama (Local Only)"])
     api_key = None
     if llm_choice == "Groq (Llama 3 - Free)":
-        # Falls back to a key stored in Streamlit secrets so the deployed
-        # demo works out of the box; visitors can still paste their own.
+        # Uses the key stored in Streamlit secrets automatically - visitors
+        # to the deployed demo never see or need to touch an API key.
         default_key = st.secrets.get("GROQ_API_KEY", "") if hasattr(st, "secrets") else ""
-        api_key = st.text_input(
-            "Groq API Key",
-            value=default_key,
-            type="password",
-            help="Free key from console.groq.com/keys",
-        )
+        if default_key:
+            api_key = default_key
+            st.caption("🔒 Using built-in Groq key")
+        else:
+            api_key = st.text_input(
+                "Groq API Key",
+                type="password",
+                help="Free key from console.groq.com/keys",
+            )
     elif llm_choice == "OpenAI API":
         default_key = st.secrets.get("OPENAI_API_KEY", "") if hasattr(st, "secrets") else ""
-        api_key = st.text_input("OpenAI API Key", value=default_key, type="password")
+        if default_key:
+            api_key = default_key
+            st.caption("🔒 Using built-in OpenAI key")
+        else:
+            api_key = st.text_input("OpenAI API Key", type="password")
     else:
         st.caption("⚠️ Requires Ollama running on this machine. Won't work on a hosted deployment.")
         
