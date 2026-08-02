@@ -1,4 +1,5 @@
 import streamlit as st
+import os
 import time
 import pandas as pd
 import numpy as np
@@ -157,30 +158,45 @@ with st.sidebar:
         # Inside with st.sidebar:
     show_sources = st.toggle("Show Sources", value=True)
     st.markdown("**📚 Knowledge Base**")
-    if st.button("🚀 Build Knowledge Base", use_container_width=True):
-        with st.spinner("Scraping docs & building Vector DB..."):
-            docs = load_documentation_data()
-            chunks = chunk_documents(docs)
-            build_vector_db(chunks)
-            st.success("✅ Ready!")
-            
+    _kb_ready = os.path.exists("vectorstore/chroma_db")
+    if _kb_ready:
+        st.success("✅ Knowledge base ready (228 chunks pre-loaded)")
+    else:
+        # Fallback only - the repo ships with a pre-built vector store,
+        # so this should rarely be needed.
+        st.warning("Knowledge base not found.")
+        if st.button("🚀 Build Knowledge Base", use_container_width=True):
+            with st.spinner("Scraping docs & building Vector DB..."):
+                docs = load_documentation_data()
+                chunks = chunk_documents(docs)
+                build_vector_db(chunks)
+                st.success("✅ Ready!")
+                st.rerun()
+
     st.divider()
     st.markdown("**🤖 LLM Backend**")
     llm_choice = st.selectbox("Model", ["Groq (Llama 3 - Free)", "OpenAI API", "Ollama (Local Only)"])
     api_key = None
     if llm_choice == "Groq (Llama 3 - Free)":
-        # Falls back to a key stored in Streamlit secrets so the deployed
-        # demo works out of the box; visitors can still paste their own.
+        # Uses the key stored in Streamlit secrets automatically - visitors
+        # to the deployed demo never see or need to touch an API key.
         default_key = st.secrets.get("GROQ_API_KEY", "") if hasattr(st, "secrets") else ""
-        api_key = st.text_input(
-            "Groq API Key",
-            value=default_key,
-            type="password",
-            help="Free key from console.groq.com/keys",
-        )
+        if default_key:
+            api_key = default_key
+            st.caption("🔒 Using built-in Groq key")
+        else:
+            api_key = st.text_input(
+                "Groq API Key",
+                type="password",
+                help="Free key from console.groq.com/keys",
+            )
     elif llm_choice == "OpenAI API":
         default_key = st.secrets.get("OPENAI_API_KEY", "") if hasattr(st, "secrets") else ""
-        api_key = st.text_input("OpenAI API Key", value=default_key, type="password")
+        if default_key:
+            api_key = default_key
+            st.caption("🔒 Using built-in OpenAI key")
+        else:
+            api_key = st.text_input("OpenAI API Key", type="password")
     else:
         st.caption("⚠️ Requires Ollama running on this machine. Won't work on a hosted deployment.")
         
@@ -773,78 +789,76 @@ with tab_kb:
 # --- SYSTEM TAB ---
 with tab_sys:
     st.markdown("### ⚙️ System Configuration")
-    
+
     col_status, col_specs = st.columns(2)
-    
+
     with col_status:
         st.markdown("#### 🟢 Service Status")
-        try:
-            import requests
-            # Checking if the local Ollama server is active
-            response = requests.get("http://localhost:11434/api/tags", timeout=2)
-            if response.status_code == 200:
-                st.success("Ollama Backend: **CONNECTED**")
-            else:
-                st.warning("Ollama Backend: **REACHABLE BUT ERROR**")
-        except:
-            st.error("Ollama Backend: **DISCONNECTED** (Is Ollama running?)")
-            
-        st.info(f"Current Vector DB: **ChromaDB**")
-        st.info(f"Embedding Model: **all-MiniLM-L6-v2**")
+
+        if "Ollama" in llm_choice:
+            try:
+                import requests
+                response = requests.get("http://localhost:11434/api/tags", timeout=2)
+                if response.status_code == 200:
+                    st.success("Ollama Backend: **CONNECTED**")
+                else:
+                    st.warning("Ollama Backend: **REACHABLE BUT ERROR**")
+            except Exception:
+                st.error("Ollama Backend: **DISCONNECTED** (Is Ollama running?)")
+        elif api_key:
+            st.success(f"{llm_choice.split(' (')[0]} Backend: **CONFIGURED** ✅")
+        else:
+            st.warning(f"{llm_choice.split(' (')[0]} Backend: **NO API KEY SET**")
+
+        st.info(f"Active LLM: **{llm_choice}**")
+        st.info(f"Current Vector DB: **ChromaDB** ({'ready' if os.path.exists('vectorstore/chroma_db') else 'not built'})")
+        st.info(f"Embedding Model: **all-MiniLM-L6-v2** (local, CPU)")
 
     with col_specs:
-        st.markdown("#### 💻 Hardware Allocation")
+        st.markdown("#### 💻 Host Resources")
+        st.caption("Reflects the server this app is running on, not your device.")
         import psutil
         ram = psutil.virtual_memory()
         st.write(f"**RAM Usage:** {ram.percent}% of {ram.total / (1024**3):.1f} GB")
-        st.write("**Compute Device:** CPU (Thread Optimized)")
+        st.write("**Compute Device:** CPU")
 
     st.divider()
 
-    # --- QUICK START COMMANDS ---
-    st.markdown("#### 🚀 Quick Start Commands")
-    os_choice = st.radio("Select Operating System:", ["Windows", "Linux/Mac"], horizontal=True)
+    # --- RUN THIS PROJECT YOURSELF ---
+    st.markdown("#### 🚀 Run This Project Yourself")
+    st.code("""
+# 1. Clone the repo
+git clone https://github.com/utkarshpachapande/rag-python-docs-qa.git
+cd rag-python-docs-qa
 
-    if os_choice == "Windows":
-        st.code("""
-# 1. Install dependencies
+# 2. Install dependencies
 pip install -r requirements.txt
 
-# 2. Install Ollama (Download Installer)
-# Visit: https://ollama.com/download/windows
+# 3. Get a free Groq API key
+# https://console.groq.com/keys
 
-# 3. Pull a model (in PowerShell/CMD)
-ollama pull llama3
-
-# 4. Start the RAG App
+# 4. Launch (paste your Groq key in the sidebar when prompted)
 streamlit run app.py
-        """, language="powershell")
-    else:
-        st.code("""
-# 1. Install dependencies
-pip install -r requirements.txt
-
-# 2. Install Ollama
-curl -fSSL https://ollama.com/install.sh | sh
-
-# 3. Pull a model
-ollama pull llama3
-
-# 4. Start the RAG App
-streamlit run app.py
-        """, language="bash")
+    """, language="bash")
+    st.caption("A pre-built knowledge base ships with the repo, so it works immediately - no scraping required.")
 
     st.divider()
-    
+
     st.markdown("#### 📂 Project Structure")
     st.code("""
     rag_project/
-    ├── app.py                # Main UI & Orchestration
+    ├── app.py                     # Main UI & orchestration
     ├── data/
-    │   └── raw_docs.json     # Scraped documentation
-    ├── db/                   # ChromaDB storage
+    │   └── raw_docs.json          # Scraped documentation metadata
+    ├── vectorstore/
+    │   └── chroma_db/             # Pre-built, persisted ChromaDB store
     └── src/
-        ├── data_loader.py    # Multi-library scraper
-        ├── chunking.py       # Text splitting logic
-        └── embeddings.py     # Local vector generation
+        ├── data_loader.py         # Multi-library documentation scraper
+        ├── chunking.py            # Text splitting logic
+        ├── embeddings.py          # Local embedding model loader
+        ├── vector_db.py           # ChromaDB build/load
+        ├── retriever.py           # Retriever construction
+        ├── prompt_engineering.py  # Grounded RAG prompt template
+        ├── llm.py                 # Pluggable LLM backend (Groq/OpenAI/Ollama)
+        └── evaluation.py          # Dynamic test-set generation & scoring
     """, language="text")
