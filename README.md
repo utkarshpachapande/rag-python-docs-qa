@@ -4,7 +4,7 @@ A production-style **Retrieval-Augmented Generation (RAG)** application that ans
 questions over NumPy, Pandas, Matplotlib, and Scikit-Learn documentation — with a live evaluation suite,
 a performance telemetry dashboard, and a searchable knowledge-base explorer.
 
-**🔗 Live demo:** _add your Streamlit Cloud URL here after deploying_
+**🔗 Live demo:** https://python-docs-assistant.streamlit.app/
 
 ![Chat Interface](Output_screenshot/1.png)
 
